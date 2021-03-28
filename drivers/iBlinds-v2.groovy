@@ -22,6 +22,7 @@
  *  2020-11-23: Minor improvements (refacotring, more static typing)
  *  2020-11-24: Added missing "position" events; updated device fingerprint; battery reports now always generate event (state change)
  *  2020-11-25: Minor tweaks to request and parse MSR and version on configure() (and installation)
+ *  2021-03-28: [BO] Redirect value=100 to user's default open position as workaround to override HomeKit-homebridge command
  */
 
 import groovy.transform.Field
@@ -33,7 +34,7 @@ import groovy.transform.Field
 ]
 
 metadata {
-   definition (name: "iBlinds v2 (Community Driver)", namespace: "RMoRobert", author: "Robert Morris", importUrl: "https://raw.githubusercontent.com/RMoRobert/Hubitat/master/drivers/iBlinds-v2.groovy") {
+   definition (name: "iBlinds v2 (Community Driver)", namespace: "RMoRobert", author: "Borirak Opasanont", importUrl: "https://github.com/boriopas/Hubitat-RMoRobert/blob/master/drivers/iBlinds-v2.groovy") {
       capability "Actuator"
       capability "WindowShade" 
       capability "SwitchLevel"
@@ -247,6 +248,12 @@ List<String> setPosition(value) {
 List<String> setLevel(value, duration=0) {
    logDebug("setLevel($value, $duration)")
    Integer level = Math.max(Math.min(value as Integer, 99), 0)
+
+   // Homekit sends open cmd as value=100, so workaround it by setting to user's open position
+   if (value as Integer == 100) {
+      level = openPosition
+   }
+
    // Skip all of this since we should wait to hear back instead?
    /*
    if (level <= 0 || level >= 99) {
